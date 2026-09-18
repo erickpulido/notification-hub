@@ -1,6 +1,6 @@
 services:
     laravel.test:
-        container_name: 'notifications-hub'
+        container_name: 'notification-hub'
         build:
             context: './vendor/laravel/sail/runtimes/8.5'
             dockerfile: Dockerfile

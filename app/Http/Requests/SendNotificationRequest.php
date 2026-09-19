@@ -31,7 +31,7 @@ final class SendNotificationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'dispatch_id' => ['required', 'string', 'uuid'],
+            'dispatch_id' => ['nullable', 'string', 'uuid'],
             'event_type' => ['required', 'string', 'max:100'],
             'channels' => ['required', 'array', 'min:1'],
             'channels.*' => ['required', 'string'],
@@ -47,7 +47,7 @@ final class SendNotificationRequest extends FormRequest
     public function toDTO(): NotificationDTO
     {
         return new NotificationDTO(
-            dispatchId: (string) $this->validated('dispatch_id'),
+            dispatchId: $this->validated('dispatch_id') ?? (string) \Illuminate\Support\Str::uuid(),
             eventType: (string) $this->validated('event_type'),
             channels: (array) $this->validated('channels'),
             payload: (array) $this->validated('payload')

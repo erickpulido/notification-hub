@@ -14,13 +14,16 @@ else
     echo "--> .env file already exists. Skipping copy."
 fi
 
-# 2. Limpieza preventiva de contenedores y redes colgadas
+# 2. Limpieza preventiva de contenedores y liberación de red
 echo "--> Cleaning up existing Docker resources..."
 if [ -f "./vendor/bin/sail" ]; then
-    ./vendor/bin/sail down -v --remove-orphans > /dev/null 2>&1 || true
+    ./vendor/bin/sail down --timeout 2 > /dev/null 2>&1 || true
 else
-    docker compose down -v --remove-orphans > /dev/null 2>&1 || true
+    docker compose down --timeout 2 > /dev/null 2>&1 || true
 fi
+
+# Pequeña pausa para asegurar que docker-proxy libere los puertos en el kernel
+sleep 2
 
 # 3. Instalar dependencias mediante contenedor de Composer con PHP 8.4
 if [ ! -d vendor ]; then

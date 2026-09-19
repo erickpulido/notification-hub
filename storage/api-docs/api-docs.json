@@ -1,0 +1,156 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Notification Hub API",
+        "description": "Microservicio asíncrono y escalable para el despacho multicanal de notificaciones resuelto mediante Arquitectura Limpia y patrones de diseño (Strategy, Factory, DTOs).",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://localhost:8080/api",
+            "description": "Entorno de Desarrollo Local"
+        }
+    ],
+    "paths": {
+        "/v1/notifications/dispatch": {
+            "post": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Despacha una notificación multicanal de forma asíncrona",
+                "description": "Punto de entrada único que recibe la petición HTTP, valida el payload y delega la ejecución de forma asíncrona a la cola de Redis.",
+                "operationId": "f0bce706462ffaae15c48ea642fc262d",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DispatchNotificationRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "202": {
+                        "description": "Petición aceptada y encolada correctamente para su procesamiento en segundo plano.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/NotificationAcceptedResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Error de validación en la estructura del JSON, campos obligatorios o canales no soportados.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Error no controlado en la capa de transporte o servidor."
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "DispatchNotificationRequest": {
+                "title": "Dispatch Notification Request",
+                "description": "Estructura de la petición HTTP para encolar el despacho de una notificación.",
+                "required": [
+                    "event_type",
+                    "channels",
+                    "payload"
+                ],
+                "properties": {
+                    "dispatch_id": {
+                        "description": "Opcional. Identificador único para garantizar idempotencia. Si se omite, el servidor generará un UUID v4 automáticamente.",
+                        "type": "string",
+                        "format": "uuid",
+                        "example": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+                        "nullable": true
+                    },
+                    "event_type": {
+                        "description": "Identificador del evento de negocio que dispara la notificación.",
+                        "type": "string",
+                        "example": "USER_WELCOME"
+                    },
+                    "channels": {
+                        "description": "Lista de canales de entrega destino solicitados (ej: email, slack).",
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "example": "email"
+                        }
+                    },
+                    "payload": {
+                        "description": "Diccionario clave-valor con la información contextual del evento.",
+                        "type": "object",
+                        "example": {
+                            "user_id": 12345,
+                            "email": "desarrollador@local.test",
+                            "message": "¡Bienvenido a la plataforma!"
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "NotificationAcceptedResponse": {
+                "title": "Notification Accepted Response",
+                "description": "Respuesta retornada cuando la notificación fue validada y encolada en Redis.",
+                "properties": {
+                    "status": {
+                        "description": "Respuesta de éxito (202 Accepted).",
+                        "type": "string",
+                        "example": "accepted"
+                    },
+                    "message": {
+                        "type": "string",
+                        "example": "Notification queued successfully."
+                    },
+                    "dispatch_id": {
+                        "description": "UUID único de rastreo de la operación.",
+                        "type": "string",
+                        "example": "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+                    }
+                },
+                "type": "object"
+            },
+            "ValidationErrorResponse": {
+                "title": "Validation Error Response",
+                "description": "Estructura estándar de errores de validación en parámetros de entrada o canales no soportados.",
+                "properties": {
+                    "message": {
+                        "description": "Respuesta de error de validación (422 Unprocessable Entity).",
+                        "type": "string",
+                        "example": "The selected channels.0 is invalid."
+                    },
+                    "errors": {
+                        "type": "object",
+                        "example": {
+                            "channels.0": [
+                                "The selected channels.0 is invalid."
+                            ],
+                            "payload.email": [
+                                "The payload.email field must be a valid email address."
+                            ]
+                        }
+                    }
+                },
+                "type": "object"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Notifications",
+            "description": "Notifications"
+        }
+    ]
+}

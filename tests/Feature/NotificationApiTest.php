@@ -69,7 +69,6 @@ final class NotificationApiTest extends TestCase
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors([
-                'dispatch_id',
                 'event_type',
                 'channels',
                 'payload',
@@ -101,5 +100,19 @@ final class NotificationApiTest extends TestCase
             ->assertJsonValidationErrors(['dispatch_id']);
 
         Queue::assertNothingPushed();
+    }
+
+    public function test_it_generates_dispatch_id_automatically_if_not_provided(): void
+    {
+        $response = $this->postJson('/api/v1/notifications/dispatch', [
+            'event_type' => 'USER_WELCOME',
+            'channels' => ['email'],
+            'payload' => ['email' => 'test@example.com']
+        ]);
+
+        $response->assertStatus(202)
+                ->assertJsonStructure(['status', 'message', 'dispatch_id']);
+
+        $this->assertNotNull($response->json('dispatch_id'));
     }
 }

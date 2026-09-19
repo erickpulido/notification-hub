@@ -6,12 +6,14 @@ namespace Tests\Unit;
 
 use App\DTOs\NotificationDTO;
 use App\Jobs\SendNotificationJob;
+use App\Mail\NotificationMail;
 use App\Services\Notifications\NotificationService;
 use App\Services\Notifications\NotificationStrategyFactory;
 use App\Services\Notifications\Contracts\NotificationStrategyInterface;
 use App\Services\Notifications\Strategies\EmailNotificationStrategy;
 use App\Services\Notifications\Strategies\SlackNotificationStrategy;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Mockery;
 use Tests\TestCase;
 
@@ -31,12 +33,15 @@ final class NotificationServiceTest extends TestCase
      */
     public function test_notification_service_dispatches_to_all_requested_channels(): void
     {
+        // Mail::fake() para evitar intento real de SMTP
+        Mail::fake();
+    
         // 1. Creamos un DTO simulado para dos canales: slack y email
         $dto = new NotificationDTO(
             dispatchId: 'a9d7c041-3b7c-47ea-a2b1-91d120a1789c',
             eventType: 'USER_WELCOME',
             channels: ['slack', 'email'],
-            payload: ['message' => 'Bienvenido']
+            payload: ['message' => 'Bienvenido', 'email' => 'user@example.com']
         );
 
         // 2. Dado que NotificationStrategyFactory y NotificationService son "final",
@@ -54,12 +59,13 @@ final class NotificationServiceTest extends TestCase
 
         Log::shouldReceive('info')
             ->once()
-            ->with('Simulando envío de notificación por Email', [
+            ->with('Notificación enviada exitosamente por Email', [
                 'dispatch_id' => $dto->dispatchId,
-                'event_type' => $dto->eventType,
-                'channel' => 'email',
-                'payload' => $dto->payload,
+                'recipient' => 'user@example.com',
             ]);
+
+        Log::shouldReceive('warning')->zeroOrMoreTimes();
+        Log::shouldReceive('error')->zeroOrMoreTimes();
 
         // 3. Resolvemos la factoría y el servicio reales del contenedor (que usan el ServiceProvider registrado)
         $factory = $this->app->make(NotificationStrategyFactory::class);
@@ -68,8 +74,8 @@ final class NotificationServiceTest extends TestCase
         // 4. Invocamos el método
         $service->sendNotification($dto);
 
-        $this->assertTrue(true);
-    }
+        Mail::assertSent(NotificationMail::class);
+    }   
 
     /**
      * @group notifications

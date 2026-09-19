@@ -640,7 +640,7 @@ final class ProcessNotificationChannelJob implements ShouldQueue
      # Reintentar masivamente jobs fallidos de un canal
      php artisan queue:retry --queue=notifications_slack
      ```
-4. **Idempotencia:** Cada payload incluye un identificador único `dispatch_id` que los proveedores aguas abajo o las estrategias de notificación pueden utilizar como clave de idempotencia (`Idempotency-Key` en encabezados HTTP) para prevenir entregas duplicadas en escenarios de reintento forzado.
+4. **Idempotencia:** Cada payload incluye un identificador único `dispatch_id` que los proveedores o las estrategias de notificación pueden utilizar como clave de idempotencia (`Idempotency-Key` en encabezados HTTP) para prevenir entregas duplicadas en escenarios de reintento forzado.
 
 ---
 

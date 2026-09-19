@@ -22,14 +22,6 @@ else
     docker compose down -v --remove-orphans > /dev/null 2>&1 || true
 fi
 
-# Esperar activamente a que el daemon de Docker y el kernel liberen el puerto 8025
-echo "--> Waiting for network sockets to release..."
-while nc -z 127.0.0.1 8025 >/dev/null 2>&1 || lsof -i :8025 >/dev/null 2>&1; do
-    echo -n "."
-    sleep 1
-done
-echo " [Ports Free]"
-
 # 3. Instalar dependencias mediante contenedor de Composer con PHP 8.4
 if [ ! -d vendor ]; then
     echo "--> Installing Composer dependencies via Docker PHP 8.4 image..."

@@ -56,7 +56,7 @@ echo "--> Running database migrations..."
 
 # 7. Reiniciar el worker de colas
 echo "--> Restarting queue worker..."
-./vendor/bin/sail artisan queue:restart
+./vendor/bin/sail restart queue-worker
 
 echo "=================================================="
 echo " Setup Completed Successfully!"
